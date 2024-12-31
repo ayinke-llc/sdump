@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/adelowo/sdump"
-	"github.com/adelowo/sdump/config"
+	"github.com/ayinke-llc/sdump"
+	"github.com/ayinke-llc/sdump/config"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/telemetry"

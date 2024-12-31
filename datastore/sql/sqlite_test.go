@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/adelowo/sdump/config"
+	"github.com/ayinke-llc/sdump/config"
 	testfixtures "github.com/go-testfixtures/testfixtures/v3"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"

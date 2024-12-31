@@ -1,4 +1,4 @@
-module github.com/adelowo/sdump
+module github.com/ayinke-llc/sdump
 
 go 1.22
 

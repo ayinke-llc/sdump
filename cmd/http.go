@@ -7,9 +7,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/adelowo/sdump/config"
-	sdumpSql "github.com/adelowo/sdump/datastore/sql"
-	"github.com/adelowo/sdump/server/httpd"
+	"github.com/ayinke-llc/sdump/config"
+	sdumpSql "github.com/ayinke-llc/sdump/datastore/sql"
+	"github.com/ayinke-llc/sdump/server/httpd"
 	"github.com/r3labs/sse/v2"
 	"github.com/sethvargo/go-limiter/memorystore"
 	"github.com/sirupsen/logrus"

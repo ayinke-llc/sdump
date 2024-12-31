@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/adelowo/sdump/config"
-	"github.com/adelowo/sdump/internal/tui"
+	"github.com/ayinke-llc/sdump/config"
+	"github.com/ayinke-llc/sdump/internal/tui"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"

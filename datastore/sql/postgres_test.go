@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/adelowo/sdump/config"
+	"github.com/ayinke-llc/sdump/config"
 	testfixtures "github.com/go-testfixtures/testfixtures/v3"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/adelowo/sdump/config"
+	"github.com/ayinke-llc/sdump/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

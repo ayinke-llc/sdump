@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/adelowo/sdump"
-	"github.com/adelowo/sdump/config"
-	sdumpSql "github.com/adelowo/sdump/datastore/sql"
+	"github.com/ayinke-llc/sdump"
+	"github.com/ayinke-llc/sdump/config"
+	sdumpSql "github.com/ayinke-llc/sdump/datastore/sql"
 	"github.com/spf13/cobra"
 )
 

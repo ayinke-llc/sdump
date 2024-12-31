@@ -3,7 +3,7 @@ package sql
 import (
 	"database/sql"
 
-	"github.com/adelowo/sdump/config"
+	"github.com/ayinke-llc/sdump/config"
 	"github.com/oiime/logrusbun"
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/bun"

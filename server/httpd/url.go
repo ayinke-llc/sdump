@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/adelowo/sdump"
-	"github.com/adelowo/sdump/config"
-	"github.com/adelowo/sdump/internal/util"
+	"github.com/ayinke-llc/sdump"
+	"github.com/ayinke-llc/sdump/config"
+	"github.com/ayinke-llc/sdump/internal/util"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
