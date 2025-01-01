@@ -37,7 +37,7 @@ jobs:
 
       - name: Run Migrations
         run: |
-          migrate -database ${{ secrets.POSTGRES_ROOT_DSN }}/sdump -path ./internal/datastore/postgres/migrations up
+          migrate -database ${{ secrets.POSTGRES_ROOT_DSN }}/sdump -path ./datastore/sql/migrations up
 
       - name: Restart sdump systemd service
         uses: appleboy/ssh-action@master
