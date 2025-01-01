@@ -27,6 +27,11 @@ jobs:
           submodules: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install X11 development libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev
+
       - name: Get and verify dependencies
         run: go mod download && go mod verify
 
