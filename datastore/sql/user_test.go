@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/adelowo/sdump"
+	"github.com/ayinke-llc/sdump"
 	"github.com/stretchr/testify/require"
 )
 

@@ -3,7 +3,7 @@ package sql
 import (
 	"context"
 
-	"github.com/adelowo/sdump"
+	"github.com/ayinke-llc/sdump"
 	"github.com/uptrace/bun"
 )
 

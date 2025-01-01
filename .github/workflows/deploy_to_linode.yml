@@ -1,0 +1,48 @@
+name: Deploy to Linode
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Golang-Migrate
+        run: |
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.18.1/migrate.linux-amd64.tar.gz | tar xvz
+          sudo mv migrate /usr/local/bin/migrate
+
+      - uses: actions/setup-go@v5
+      - name: Build app
+        run: go build -o sdump ./cmd
+
+      - name: SCP to Linode instance ( Binary )
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.IP_ADDRESS }}
+          username: "root"
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          source: "sdump"
+          target: "/root"
+
+      - name: Run Migrations
+        run: |
+          migrate -database ${{ secrets.POSTGRES_ROOT_DSN }}/sdump -path ./datastore/postgres/migrations up
+
+      - name: Restart sdump systemd service
+        uses: appleboy/ssh-action@master
+        env:
+          INFISICAL_CLIENT_ID: ${{ secrets.INFISICAL_CLIENT_ID }}
+          INFISICAL_CLIENT_SECRET: ${{ secrets.INFISICAL_CLIENT_SECRET }}
+        with:
+          host: ${{ secrets.IP_ADDRESS }}
+          username: "root"
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script_path: deploy/linode.sh
+          envs: INFISICAL_CLIENT_ID,INFISICAL_CLIENT_SECRET

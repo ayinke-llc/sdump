@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/adelowo/sdump"
+	"github.com/ayinke-llc/sdump"
 	"github.com/dustin/go-humanize"
 )
 

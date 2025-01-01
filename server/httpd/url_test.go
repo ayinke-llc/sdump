@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adelowo/sdump"
-	"github.com/adelowo/sdump/config"
-	"github.com/adelowo/sdump/mocks"
+	"github.com/ayinke-llc/sdump"
+	"github.com/ayinke-llc/sdump/config"
+	"github.com/ayinke-llc/sdump/mocks"
 	"github.com/r3labs/sse/v2"
 	"github.com/sebdah/goldie/v2"
 	"github.com/sirupsen/logrus"

@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/adelowo/sdump/config"
-	"github.com/adelowo/sdump/internal/util"
+	"github.com/ayinke-llc/sdump/config"
+	"github.com/ayinke-llc/sdump/internal/util"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"

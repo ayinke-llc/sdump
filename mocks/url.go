@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	sdump "github.com/adelowo/sdump"
+	sdump "github.com/ayinke-llc/sdump"
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -22,6 +22,7 @@ import (
 type MockURLRepository struct {
 	ctrl     *gomock.Controller
 	recorder *MockURLRepositoryMockRecorder
+	isgomock struct{}
 }
 
 // MockURLRepositoryMockRecorder is the mock recorder for MockURLRepository.

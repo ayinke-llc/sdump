@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"github.com/adelowo/sdump/config"
+	"github.com/ayinke-llc/sdump/config"
 )
 
 type Option func(*model)
