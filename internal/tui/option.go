@@ -35,3 +35,11 @@ func WithSSHFingerPrint(fingerPrint string) Option {
 		m.sshFingerPrint = fingerPrint
 	}
 }
+
+func WithHTTPForwarding(host string, portToForwardTo int) Option {
+	return func(m *model) {
+		m.isHTTPForwardingEnabled = true
+		m.portToForwardTo = portToForwardTo
+		m.host = host
+	}
+}

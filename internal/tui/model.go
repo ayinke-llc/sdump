@@ -48,6 +48,10 @@ type model struct {
 	width, height int
 
 	sshFingerPrint string
+
+	host                    string
+	isHTTPForwardingEnabled bool
+	portToForwardTo         int
 }
 
 func New(cfg *config.Config,
