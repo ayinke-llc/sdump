@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ayinke-llc/sdump"
 	"github.com/ayinke-llc/sdump/config"
 	"github.com/ayinke-llc/sdump/internal/util"
 	"github.com/charmbracelet/bubbles/list"
@@ -39,10 +40,12 @@ type model struct {
 	httpClient  *http.Client
 	colorscheme string
 
-	sseClient                 *sse.Client
-	receiveChan               chan item
-	detailedRequestView       viewport.Model
-	detailedRequestViewBuffer *bytes.Buffer
+	sseClient                  *sse.Client
+	receiveChan                chan item
+	detailedRequestView        viewport.Model
+	detailedRequestViewBuffer  *bytes.Buffer
+	detailedResponseView       viewport.Model
+	detailedResponseViewBuffer *bytes.Buffer
 
 	headersTable  table.Model
 	width, height int
@@ -106,11 +109,13 @@ func newModel(cfg *config.Config, width, height int) model {
 			Timeout: time.Minute,
 		},
 
-		requestList:               list.New([]list.Item{}, list.NewDefaultDelegate(), 50, height),
-		detailedRequestView:       viewport.New(width, height),
-		detailedRequestViewBuffer: bytes.NewBuffer(nil),
-		sseClient:                 sse.NewClient(fmt.Sprintf("%s/events", cfg.HTTP.Domain)),
-		receiveChan:               make(chan item),
+		requestList:                list.New([]list.Item{}, list.NewDefaultDelegate(), 50, height),
+		detailedRequestView:        viewport.New(width, height),
+		detailedRequestViewBuffer:  bytes.NewBuffer(nil),
+		detailedResponseView:       viewport.New(width, height),
+		detailedResponseViewBuffer: bytes.NewBuffer(nil),
+		sseClient:                  sse.NewClient(fmt.Sprintf("%s/events", cfg.HTTP.Domain)),
+		receiveChan:                make(chan item),
 
 		headersTable: table.New(table.WithColumns(columns),
 			table.WithFocused(true),
@@ -214,7 +219,7 @@ func (m model) createEndpoint(forceURLChange bool) func() tea.Msg {
 	}
 }
 
-func (m model) forwardHTTPRequest(item item) error {
+func (m model) forwardHTTPRequest(item *item) error {
 	if !m.isHTTPForwardingEnabled {
 		return nil
 	}
@@ -225,7 +230,11 @@ func (m model) forwardHTTPRequest(item item) error {
 	// Create forwarding request
 	req, err := http.NewRequest(item.Request.Method, forwardURL, strings.NewReader(item.Request.Body))
 	if err != nil {
-		return fmt.Errorf("error creating forward request: %w", err)
+		item.Response = &sdump.ResponseDefinition{
+			Body:       fmt.Sprintf("Error creating forward request: %v", err),
+			StatusCode: http.StatusInternalServerError,
+		}
+		return nil
 	}
 
 	// Copy original headers
@@ -243,9 +252,32 @@ func (m model) forwardHTTPRequest(item item) error {
 	// Forward the request
 	resp, err := m.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("error forwarding request: %w", err)
+		item.Response = &sdump.ResponseDefinition{
+			Body:       fmt.Sprintf("Error forwarding request: %v", err),
+			StatusCode: http.StatusInternalServerError,
+		}
+		return nil
 	}
 	defer resp.Body.Close()
+
+	// Read response body
+	respBody := new(bytes.Buffer)
+	size, err := io.Copy(respBody, resp.Body)
+	if err != nil {
+		item.Response = &sdump.ResponseDefinition{
+			Body:       fmt.Sprintf("Error reading response body: %v", err),
+			StatusCode: http.StatusInternalServerError,
+		}
+		return nil
+	}
+
+	// Store response
+	item.Response = &sdump.ResponseDefinition{
+		Body:       respBody.String(),
+		Headers:    resp.Header,
+		StatusCode: resp.StatusCode,
+		Size:       size,
+	}
 
 	return nil
 }
@@ -283,17 +315,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case ItemMsg:
 		// Forward HTTP request if enabled
-		if err := m.forwardHTTPRequest(msg.item); err != nil {
-			m.err = err
-			return m, cmd
-		}
-
+		_ = m.forwardHTTPRequest(&msg.item)
 		m.requestList.InsertItem(0, msg.item)
 		return m, m.waitForNextItem
 
 	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 
-		m.requestList.SetSize(msg.Width, msg.Height-27)
+		// Reserve space for header (4 lines) + padding
+		headerHeight := 6
+		contentHeight := m.height - headerHeight - 2 // -2 for spacing
+
+		// Adjust list and viewport sizes
+		m.requestList.SetSize(m.width/4, contentHeight)
+		m.detailedRequestView.Height = contentHeight
+		m.detailedResponseView.Height = contentHeight
+		m.detailedRequestView.Width = (m.width * 3 / 4) / 2
+		m.detailedResponseView.Width = (m.width * 3 / 4) / 2
 
 		return m, cmd
 
@@ -343,7 +382,7 @@ func (m model) View() string {
 
 	if !m.isInitialized() {
 		return lipgloss.Place(
-			200, 3,
+			m.width, m.height,
 			lipgloss.Center,
 			lipgloss.Center,
 			lipgloss.JoinVertical(lipgloss.Center,
@@ -352,28 +391,70 @@ func (m model) View() string {
 			))
 	}
 
-	browserHeader := lipgloss.Place(
-		200, 0,
-		lipgloss.Center, lipgloss.Center,
-		lipgloss.JoinVertical(lipgloss.Center,
-			boldenString("Inspecting incoming HTTP requests", true),
-			boldenString(fmt.Sprintf(`
-Waiting for requests on %s .. Press Ctrl-y to copy the url. Use ctrl-b to copy the json request body in view.
-				You can use j,k or arrow up and down to navigate your requests`, m.dumpURL), true),
-		))
+	// Style for the header section
+	headerStyle := lipgloss.NewStyle().
+		Width(m.width).
+		Align(lipgloss.Center).
+		BorderBottom(true).
+		PaddingBottom(1)
 
-	return m.spinner.View() + browserHeader + strings.Repeat("\n", 2) + m.makeTable()
+	// Create header content
+	header := lipgloss.JoinVertical(lipgloss.Center,
+		boldenString("Inspecting incoming HTTP requests", true),
+		boldenString(fmt.Sprintf("Waiting for requests on %s", m.dumpURL), true),
+		boldenString("Press Ctrl-y to copy the url. Use ctrl-b to copy the json request body in view.", true),
+		boldenString("You can use j,k or arrow up and down to navigate your requests", true),
+	)
+
+	// Render the header with style
+	styledHeader := headerStyle.Render(header)
+
+	// Main content
+	content := m.makeTable()
+
+	// Join everything together with proper spacing
+	return lipgloss.JoinVertical(
+		lipgloss.Top,
+		styledHeader,
+		"\n",
+		content,
+	)
 }
 
 func (m model) buildView() string {
+	// Calculate available width for each section
+	totalWidth := m.width
+	leftWidth := totalWidth / 4              // 25% for request list
+	rightWidth := totalWidth - leftWidth - 4 // Remaining space minus padding for right section
+	rightHalfWidth := (rightWidth / 2) - 2   // Split right section in two, minus padding
+
+	// Left side with request list
+	leftView := lipgloss.NewStyle().
+		Width(leftWidth).
+		Height(m.height - 8). // Subtract header height
+		Render(m.requestList.View())
+
+	// Right side with request and response side by side
+	rightView := lipgloss.JoinHorizontal(lipgloss.Top,
+		// Request section (headers + body)
+		lipgloss.NewStyle().
+			Width(rightHalfWidth).
+			Height(m.height-8). // Subtract header height
+			MarginRight(2).
+			Render(m.detailedRequestView.View()),
+		// Response section (headers + body)
+		lipgloss.NewStyle().
+			Width(rightHalfWidth).
+			Height(m.height-8). // Subtract header height
+			Render(m.detailedResponseView.View()))
+
+	// Join left and right sides
 	return lipgloss.JoinHorizontal(lipgloss.Top,
-		lipgloss.NewStyle().Margin(1, 4).
-			Render(m.requestList.View()),
-		lipgloss.NewStyle().Padding(0, 0).
-			Render(lipgloss.JoinHorizontal(lipgloss.Center,
-				m.headersTable.View(), ""),
-				lipgloss.NewStyle().Margin(1, 0, 0, 0).
-					Render(m.detailedRequestView.View())))
+		leftView,
+		lipgloss.NewStyle().
+			MarginLeft(2).
+			MarginRight(2).
+			Render(rightView))
 }
 
 func (m model) makeTable() string {
@@ -382,48 +463,84 @@ func (m model) makeTable() string {
 		return m.buildView()
 	}
 
+	// Reset buffers
 	m.detailedRequestViewBuffer.Reset()
+	m.detailedResponseViewBuffer.Reset()
 
-	// Since the url is meant to take any json content ( valid or not)
-	// we do not want to enforce if a JSON is valid or not. Even on the ingestion side
-	// If we have a valid JSON, pretty print it. Else use the json body as is
-	jsonBody, err := prettyPrintJSON(selectedItem.Request.Body)
-	if err != nil {
-		jsonBody = selectedItem.Request.Body
-	}
+	// Show URL at the top
+	urlStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("86"))
+	m.detailedRequestViewBuffer.WriteString(fmt.Sprintf("%s\n\n", urlStyle.Render(fmt.Sprintf("URL: %s", selectedItem.Request.Path))))
 
-	// if we have an error here, just reuse the json body as it is without adding
-	// color
-	if err := highlightCode(m.detailedRequestViewBuffer, jsonBody, m.cfg.TUI.ColorScheme); err != nil {
-		m.detailedRequestViewBuffer.WriteString(jsonBody)
-	}
+	// Request Headers Section
+	headerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FFFFFF")).
+		Background(lipgloss.Color("#8B00FF")).
+		Bold(true)
+	keyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("86"))
 
-	m.detailedRequestView.SetContent(m.detailedRequestViewBuffer.String())
-
-	m.detailedRequestViewBuffer.Reset()
-	m.detailedRequestViewBuffer.WriteString(jsonBody)
+	m.detailedRequestViewBuffer.WriteString(headerStyle.Render("Request Headers") + "\n\n")
 
 	var keys []string
 	for key := range selectedItem.Request.Headers {
 		keys = append(keys, key)
 	}
-
 	sort.Strings(keys)
-
-	rows := []table.Row{}
 
 	for _, v := range keys {
 		value := selectedItem.Request.Headers.Get(v)
 		if value == "" {
 			continue
 		}
-
-		rows = append(rows, table.Row{
-			v, value,
-		})
+		m.detailedRequestViewBuffer.WriteString(fmt.Sprintf("%s %s\n",
+			keyStyle.Render(v+":"),
+			value))
 	}
 
-	m.headersTable.SetRows(rows)
+	// Request Body
+	m.detailedRequestViewBuffer.WriteString("\n" + headerStyle.Render("Request Body") + "\n\n")
+	jsonBody, err := prettyPrintJSON(selectedItem.Request.Body)
+	if err != nil {
+		jsonBody = selectedItem.Request.Body
+	}
+	if err := highlightCode(m.detailedRequestViewBuffer, jsonBody, m.cfg.TUI.ColorScheme); err != nil {
+		m.detailedRequestViewBuffer.WriteString(jsonBody)
+	}
+	m.detailedRequestView.SetContent(m.detailedRequestViewBuffer.String())
+
+	// Handle response
+	if selectedItem.Response != nil {
+		// Response Headers
+		m.detailedResponseViewBuffer.WriteString(headerStyle.Render("Response Headers") + "\n\n")
+		m.detailedResponseViewBuffer.WriteString(fmt.Sprintf("%s %d\n", keyStyle.Render("Status:"), selectedItem.Response.StatusCode))
+		m.detailedResponseViewBuffer.WriteString(fmt.Sprintf("%s %d bytes\n", keyStyle.Render("Size:"), selectedItem.Response.Size))
+
+		var respKeys []string
+		for key := range selectedItem.Response.Headers {
+			respKeys = append(respKeys, key)
+		}
+		sort.Strings(respKeys)
+
+		for _, v := range respKeys {
+			value := selectedItem.Response.Headers.Get(v)
+			if value == "" {
+				continue
+			}
+			m.detailedResponseViewBuffer.WriteString(fmt.Sprintf("%s %s\n",
+				keyStyle.Render(v+":"),
+				value))
+		}
+
+		// Response Body
+		m.detailedResponseViewBuffer.WriteString("\n" + headerStyle.Render("Response Body") + "\n\n")
+		respBody, err := prettyPrintJSON(selectedItem.Response.Body)
+		if err != nil {
+			respBody = selectedItem.Response.Body
+		}
+		if err := highlightCode(m.detailedResponseViewBuffer, respBody, m.cfg.TUI.ColorScheme); err != nil {
+			m.detailedResponseViewBuffer.WriteString(respBody)
+		}
+	}
+	m.detailedResponseView.SetContent(m.detailedResponseViewBuffer.String())
 
 	return m.buildView()
 }

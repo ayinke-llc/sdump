@@ -20,6 +20,13 @@ type RequestDefinition struct {
 	Path      string      `json:"path,omitempty"`
 }
 
+type ResponseDefinition struct {
+	Body       string      `json:"body,omitempty"`
+	Headers    http.Header `json:"headers,omitempty"`
+	StatusCode int         `json:"status_code,omitempty"`
+	Size       int64       `json:"size,omitempty"`
+}
+
 type IngestHTTPRequest struct {
 	ID      uuid.UUID         `bun:"type:uuid,default:uuid_generate_v4()" json:"id,omitempty" mapstructure:"id"`
 	UrlID   uuid.UUID         `json:"url_id,omitempty"`

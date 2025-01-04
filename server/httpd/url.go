@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ayinke-llc/hermes"
 	"github.com/ayinke-llc/sdump"
 	"github.com/ayinke-llc/sdump/config"
 	"github.com/ayinke-llc/sdump/internal/util"
@@ -176,9 +175,9 @@ func (u *urlHandler) ingest(w http.ResponseWriter, r *http.Request) {
 
 	var requestPath = "/"
 
-	ss := strings.Split(r.URL.Path, "/"+reference)
-	if len(ss) == 2 && !hermes.IsStringEmpty(ss[1]) {
-		requestPath = ss[1]
+	// Split the path at the reference and take everything after it
+	if strings.Contains(r.URL.Path, "/"+reference+"/") {
+		requestPath = strings.SplitN(r.URL.Path, "/"+reference, 2)[1]
 	}
 
 	logger := u.logger.WithField("request_id", requestID).
