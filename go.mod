@@ -1,11 +1,12 @@
 module github.com/ayinke-llc/sdump
 
-go 1.22
+go 1.23.1
 
-toolchain go1.22.1
+toolchain go1.23.4
 
 require (
 	github.com/alecthomas/chroma/v2 v2.12.0
+	github.com/ayinke-llc/hermes v0.0.0-20241111220852-f19376e25099
 	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.2.4
 	github.com/charmbracelet/lipgloss v1.0.0
@@ -29,7 +30,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.27.0
 	github.com/uptrace/bun v1.1.17
 	github.com/uptrace/bun/dialect/pgdialect v1.1.17

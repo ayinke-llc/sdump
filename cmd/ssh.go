@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"os"
 	"os/signal"
 	"strconv"
@@ -144,15 +143,7 @@ func teaHandler(cfg *config.Config) func(s ssh.Session) (tea.Model, []tea.Progra
 				return nil, nil
 			}
 
-			host, _, err := net.SplitHostPort(s.RemoteAddr().String())
-			if err != nil {
-				wish.Fatalln(s, "could not fetch your remote address for port forwarding")
-				return nil, nil
-			}
-
-			fmt.Println(host, port)
-
-			opts = append(opts, tui.WithHTTPForwarding(host, port))
+			opts = append(opts, tui.WithHTTPForwarding(port))
 		}
 
 		tuiModel, err := tui.New(cfg, opts...)

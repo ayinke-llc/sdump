@@ -214,6 +214,42 @@ func (m model) createEndpoint(forceURLChange bool) func() tea.Msg {
 	}
 }
 
+func (m model) forwardHTTPRequest(item item) error {
+	if !m.isHTTPForwardingEnabled {
+		return nil
+	}
+
+	// Always forward to localhost since we want to forward to a local service
+	forwardURL := fmt.Sprintf("http://localhost:%d%s", m.portToForwardTo, item.Request.Path)
+
+	// Create forwarding request
+	req, err := http.NewRequest(item.Request.Method, forwardURL, strings.NewReader(item.Request.Body))
+	if err != nil {
+		return fmt.Errorf("error creating forward request: %w", err)
+	}
+
+	// Copy original headers
+	for k, v := range item.Request.Headers {
+		for _, headerVal := range v {
+			req.Header.Add(k, headerVal)
+		}
+	}
+
+	// Add query parameters if any
+	if item.Request.Query != "" {
+		req.URL.RawQuery = item.Request.Query
+	}
+
+	// Forward the request
+	resp, err := m.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error forwarding request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -246,9 +282,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case ItemMsg:
+		// Forward HTTP request if enabled
+		if err := m.forwardHTTPRequest(msg.item); err != nil {
+			m.err = err
+			return m, cmd
+		}
 
 		m.requestList.InsertItem(0, msg.item)
-
 		return m, m.waitForNextItem
 
 	case tea.WindowSizeMsg:

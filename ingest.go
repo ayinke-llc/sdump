@@ -17,6 +17,7 @@ type RequestDefinition struct {
 	IPAddress net.IP      `json:"ip_address,omitempty" bson:"ip_address"`
 	Size      int64       `json:"size,omitempty"`
 	Method    string      `json:"method,omitempty"`
+	Path      string      `json:"path,omitempty"`
 }
 
 type IngestHTTPRequest struct {

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ayinke-llc/hermes"
 	"github.com/ayinke-llc/sdump"
 	"github.com/ayinke-llc/sdump/config"
 	"github.com/ayinke-llc/sdump/internal/util"
@@ -173,6 +174,13 @@ func (u *urlHandler) ingest(w http.ResponseWriter, r *http.Request) {
 
 	reference := chi.URLParam(r, "reference")
 
+	var requestPath = "/"
+
+	ss := strings.Split(r.URL.Path, "/"+reference)
+	if len(ss) == 2 && !hermes.IsStringEmpty(ss[1]) {
+		requestPath = ss[1]
+	}
+
 	logger := u.logger.WithField("request_id", requestID).
 		WithField("method", "urlHandler.ingest").
 		WithField("reference", reference)
@@ -229,6 +237,7 @@ func (u *urlHandler) ingest(w http.ResponseWriter, r *http.Request) {
 			IPAddress: util.GetIP(r),
 			Size:      size,
 			Method:    r.Method,
+			Path:      requestPath,
 		},
 	}
 

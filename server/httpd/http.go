@@ -99,7 +99,8 @@ func buildRoutes(cfg config.Config,
 	}
 
 	router.Post("/", urlHandler.create)
-	router.Handle("/{reference}", mid.Handle(http.HandlerFunc(urlHandler.ingest)))
+	router.Handle("/{reference:[^/]+}", mid.Handle(http.HandlerFunc(urlHandler.ingest)))
+	router.Handle("/{reference:[^/]+}/*", mid.Handle(http.HandlerFunc(urlHandler.ingest)))
 	router.Get("/events", sseServer.ServeHTTP)
 
 	return router
