@@ -173,6 +173,13 @@ func (u *urlHandler) ingest(w http.ResponseWriter, r *http.Request) {
 
 	reference := chi.URLParam(r, "reference")
 
+	var requestPath = "/"
+
+	// Split the path at the reference and take everything after it
+	if strings.Contains(r.URL.Path, "/"+reference+"/") {
+		requestPath = strings.SplitN(r.URL.Path, "/"+reference, 2)[1]
+	}
+
 	logger := u.logger.WithField("request_id", requestID).
 		WithField("method", "urlHandler.ingest").
 		WithField("reference", reference)
@@ -229,6 +236,7 @@ func (u *urlHandler) ingest(w http.ResponseWriter, r *http.Request) {
 			IPAddress: util.GetIP(r),
 			Size:      size,
 			Method:    r.Method,
+			Path:      requestPath,
 		},
 	}
 

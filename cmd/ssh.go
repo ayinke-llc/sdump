@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -116,18 +117,36 @@ func teaHandler(cfg *config.Config) func(s ssh.Session) (tea.Model, []tea.Progra
 	return func(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 		pty, _, active := s.Pty()
 		if !active {
-			wish.Fatalln(s, "no active terminal, skipping")
+			wish.Println(s, "Error: This server requires an interactive terminal. Use -t")
 			return nil, nil
 		}
 
-		sshFingerPrint := gossh.FingerprintSHA256(s.PublicKey())
+		var opts []tui.Option
 
-		tuiModel, err := tui.New(cfg,
-			tui.WithWidth(pty.Window.Width),
+		opts = append(opts, tui.WithWidth(pty.Window.Width),
 			tui.WithHeight(pty.Window.Height),
-			tui.WithSSHFingerPrint(sshFingerPrint),
+			tui.WithSSHFingerPrint(gossh.FingerprintSHA256(s.PublicKey())),
 			tui.WithColorscheme(cfg.TUI.ColorScheme),
 		)
+
+		// NOTE: when we decide to expand this by adding more commands,
+		// please move the parsing of these commands out of here and simplify the logic
+		if len(s.Command()) == 2 {
+			if s.Command()[0] != "http" {
+				wish.Fatalln(s, "Only http commands supported")
+				return nil, nil
+			}
+
+			port, err := strconv.Atoi(s.Command()[1])
+			if err != nil {
+				wish.Fatal(s, "Please provide a valid port number to forward http requests to")
+				return nil, nil
+			}
+
+			opts = append(opts, tui.WithHTTPForwarding(port))
+		}
+
+		tuiModel, err := tui.New(cfg, opts...)
 		if err != nil {
 			wish.Fatalln(s, fmt.Errorf("%v...Could not set up TUI session", err))
 			return nil, nil

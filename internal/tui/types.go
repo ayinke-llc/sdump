@@ -22,9 +22,10 @@ type ItemMsg struct {
 }
 
 type item struct {
-	Request   sdump.RequestDefinition `json:"request,omitempty"`
-	ID        string                  `json:"id,omitempty"`
-	CreatedAt time.Time               `json:"created_at,omitempty"`
+	Request   sdump.RequestDefinition   `json:"request,omitempty"`
+	Response  *sdump.ResponseDefinition `json:"response,omitempty"`
+	ID        string                    `json:"id,omitempty"`
+	CreatedAt time.Time                 `json:"created_at,omitempty"`
 }
 
 func (i item) Title() string { return fmt.Sprintf("%s    %s", i.ID, i.Request.IPAddress) }

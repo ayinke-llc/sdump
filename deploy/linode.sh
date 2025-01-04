@@ -32,6 +32,12 @@ sudo mv /root/sdump /usr/local/bin/sdump
 sudo systemctl restart sdump-http
 sudo systemctl status sdump-http
 
-sudo systemctl stop sdump-ssh
-sudo systemctl restart sdump-ssh
-sudo systemctl status sdump-ssh
+export SDUMP_SSH_PORT=3333
+export SDUMP_SSH_HOST=localhost
+export SDUMP_SSH_IDENTITIES=/root/.ssh/id_rsa
+export SDUMP_HTTP_DOMAIN=https://sdump.app
+
+## kill all screen sesssions and restart
+pkill screen
+screen -wipe
+screen -dmS ssh_server sdump ssh
