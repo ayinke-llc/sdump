@@ -1,4 +1,4 @@
-FROM golang:1.22 as build-env
+FROM golang:1.23 as build-env
 WORKDIR /go/src/github.com/ayinke-llc/sdump
 
 COPY ./go.mod /go/src/github.com/ayinke-llc/sdump

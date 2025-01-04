@@ -6,7 +6,6 @@ toolchain go1.23.4
 
 require (
 	github.com/alecthomas/chroma/v2 v2.12.0
-	github.com/ayinke-llc/hermes v0.0.0-20241111220852-f19376e25099
 	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.2.4
 	github.com/charmbracelet/lipgloss v1.0.0
