@@ -23,8 +23,16 @@ project sdump
 ### How to use public hosted version
 
 ```sh
-ssh -p 2222 ssh.sdump.app
+ssh -t -p 2222 ssh.sdump.app
 ```
+
+#### You can also proxy to your local server
+
+```sh
+ssh -p 2222 -t ssh.sdump.app http 4200
+```
+
+> URLs are persisted by default as long as you connect with the same ssh key
 
 ## Getting started
 
