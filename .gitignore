@@ -2,3 +2,5 @@
 # deploy/
 id_ed25*
 id_ed25519*
+# Added by goreleaser init:
+dist/
