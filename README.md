@@ -26,13 +26,15 @@ project sdump
 ssh -t -p 2222 ssh.sdump.app
 ```
 
-#### You can also proxy to your local server
-
-```sh
-ssh -p 2222 -t ssh.sdump.app http 4200
-```
-
+> [!NOTE]
 > URLs are persisted by default as long as you connect with the same ssh key
+
+> [!IMPORTANT]
+> We might routinely change the ssh key of the server which might prevent
+> ssh from auto connecting when we move the app from server a to b as part of our processes.
+> And you will be presented with an error saying the
+> key was changed. That is fine, just delete the `ssh.sdump.app` line in your
+> `~/.ssh/known_hosts`
 
 ## Getting started
 
