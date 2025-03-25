@@ -19,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/r3labs/sse/v2"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 )
 
@@ -172,6 +173,8 @@ func (u *urlHandler) ingest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reference := chi.URLParam(r, "reference")
+
+	span.SetAttributes(attribute.String("reference", reference))
 
 	logger := u.logger.WithField("request_id", requestID).
 		WithField("method", "urlHandler.ingest").
