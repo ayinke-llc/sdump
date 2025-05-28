@@ -18,7 +18,7 @@ get a request bin.
 
 I spend an awful amount of time in the terminal and it makes sense i should
 be able to spin up and use a request bin on my terminal. Hence this
-project sdump
+project
 
 ### How to use public hosted version
 
