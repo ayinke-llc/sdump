@@ -11,11 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Golang-Migrate
-        run: |
-          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.18.1/migrate.linux-amd64.tar.gz | tar xvz
-          sudo mv migrate /usr/local/bin/migrate
-
       - name: Install X11 development libraries
         run: |
           sudo apt-get update
@@ -34,10 +29,6 @@ jobs:
           port: 22
           source: "sdump"
           target: "/root"
-
-      - name: Run Migrations
-        run: |
-          migrate -database ${{ secrets.POSTGRES_ROOT_DSN }}/sdump -path ./datastore/sql/migrations up
 
       - name: Restart sdump systemd service
         uses: appleboy/ssh-action@master
